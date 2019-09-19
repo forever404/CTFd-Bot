@@ -15,7 +15,7 @@ def login(login_url, username, password):
     try:
         r = sss.get(login_url, headers = my_headers)
     except:
-        logging.error('[error]fail to login,check your config and network')
+        #logging.error('[error]fail to login,check your config and network')
         return
     reg = r'<input type="hidden" name="nonce" value="(.*)">'
     pattern = re.compile(reg)
@@ -33,13 +33,14 @@ def login(login_url, username, password):
     try:
         r = sss.post(login_url, headers = my_headers, data = my_data)
     except:
-        logging.error('[error]fail to login,check your config and network')
+        #logging.error('[error]fail to login,check your config and network')
         return
     if r.ok == True:
         logging.info('[success]login ok,start the robot...')
         return sss
     else:
-        logging.error('[error]fail to login,check your config and network')
+        pass
+		#logging.error('[error]fail to login,check your config and network')
 
 #取配置文件
 def readConf(configFile,subject,key):
@@ -50,8 +51,9 @@ def readConf(configFile,subject,key):
 #取用户列表
 def get_user_list():
     theSession = login(logininfo.login_url,logininfo.username,logininfo.password)
+    apiUrl = 'http://ip:port/api/v1/users' #ctfd 地址
     try:
-        responseJson = theSession.get(logininfo.apiUrl)
+        responseJson = theSession.get(apiUrl)
     except:
         logging.error('[error]fail to get api info,continue.')
         return []
@@ -65,10 +67,11 @@ def get_user_list():
 #取提交flag信息
 def get_attempt_info():
     theSession = login(logininfo.login_url,logininfo.username,logininfo.password)
+    apiUrl = 'http://ip:port/api/v1/submissions' #ctfd 地址
     try:
-        responseJson = theSession.get(logininfo.apiUrl)
+        responseJson = theSession.get(apiUrl)
     except:
-        logging.error('[error]fail to get api info,continue.')
+        logging.error('[error0]fail to get api info,continue.')
         return []
     jsonInfo = json.loads(responseJson.text)
     if jsonInfo['success'] != True:
@@ -84,22 +87,24 @@ async def deal_user_list():
         try:
             tmpList = get_user_list()
             tmpLen = len(tmpList)
+            print(userLen,tmpLen)
             if tmpLen == 0:
+                await asyncio.sleep(3)
                 continue
             if userLen < tmpLen:
                 for i in range(userLen,tmpLen):
-                    message = tmpList[i]['name']+"成功注册"
+                    message = tmpList[i]['name']+" 成功注册~"
                     requests.get(logininfo.group_api+message)
                 userLen = tmpLen
                 userList = tmpList
             else:
                 userLen = tmpLen
                 userlist = tmpList
+            await asyncio.sleep(3)
         except TypeError:
-            logging.error('[error]fail to get api info,continue.')
-            continue         
-        await asyncio.sleep(5)
-        logging.info("complete one time dectect of users.")
+            logging.error('[error1]fail to get api info,continue.')
+            continue
+            await asyncio.sleep(3)
 
 async def deal_attemp_list():
     global userLen,userList,allLen,allList
@@ -108,6 +113,7 @@ async def deal_attemp_list():
             tmpallList = get_attempt_info()
             tmpallLen = len(tmpallList)
             if tmpallLen == 0:
+                await asyncio.sleep(3)
                 continue
             if allLen < tmpallLen:
                 for i in range(allLen,tmpallLen):
@@ -118,6 +124,7 @@ async def deal_attemp_list():
                                 chaname = s['name']
                                 if chaname == "":
                                     continue
+                                    await asyncio.sleep(3)
                         message = "恭喜" + chaname + "做出" + str(tmpallList[i]['challenge']['category'])+"题目-" + str(tmpallList[i]['challenge']['name'])
                         #requests.get(logininfo.url_api+message)
                         requests.get(logininfo.group_api+message)
@@ -126,16 +133,16 @@ async def deal_attemp_list():
             else:
                 allLen = tmpallLen
                 allList = tmpallList
+            await asyncio.sleep(3)
         except TypeError:
-            logging.error('[error]fail to get api info,continue.')
+            logging.error('[error2]fail to get api info,continue.')
             continue         
-        await asyncio.sleep(5)
-        logging.info("complete one time dectect of challenge.")
 if __name__ == ("__main__"):
     logging.basicConfig(filename='err.log',level=logging.ERROR,format='%(asctime)s %(filename)s[line:%(lineno)d] %(message)s',datefmt='%Y-%m-%d')
 
 # 全局变量声明
     userList = get_user_list()
+    #userLen = 0
     userLen = len(userList)
     allList = get_attempt_info()
     allLen = len(allList)
